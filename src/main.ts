@@ -5,7 +5,7 @@ import { Catalog } from "./components/Models/Catalog";
 import { apiProducts } from "./utils/data";
 import { Connection } from "./components/Connection/connection";
 import { API_URL } from "./utils/constants";
-import { IOrder, IProduct } from "./types";
+import { IOrder, IPaymentType, IProduct } from "./types";
 import { IResponse } from "./types";
 import { Api } from "./components/base/Api";
 
@@ -71,7 +71,9 @@ console.log(catalog.getProducts());
 console.log(
   `Поиск товара по id='c101ab44-ed99-4a54-990d-47aa2bb4e7d9': описание - '${catalog.getProductById("c101ab44-ed99-4a54-990d-47aa2bb4e7d9")?.description}'`,
 );
-console.log(`Товар с несущействующим id='123': ${catalog.getProductById("123")}`);
+console.log(
+  `Товар с несущействующим id='123': ${catalog.getProductById("123")}`,
+);
 // сохранение товара для детального отображения
 catalog.saveProductDetailed(apiProducts.items[0]);
 // проверка сохранения и получения
@@ -83,7 +85,7 @@ console.log(
 
 // асинхронная функция для обработки запроса с сервера
 async function downloadData(): Promise<IResponse> {
-  const response: IResponse = await connection.get();
+  const response: IResponse = await connection.getProductsFromServer();
   productsFromServer.push(...response.items);
   return response;
 }
@@ -103,9 +105,10 @@ console.log(
     basket.getBasketProducts().length,
 );
 
+const payment: IPaymentType = "card";
 // Добавляем пользователя
 buyer.saveData({
-  payment: "card",
+  payment: payment,
   email: "test@test.ru",
   phone: "2389",
   address: "Marshal street",
@@ -117,8 +120,20 @@ const data: IOrder = Object.assign(
     total: basket.getTotalPrice(),
     items: basket.getBasketProducts().map((product) => product.id),
   },
-  buyer,
+  buyer.getData(),
 );
-console.log("Отправка данных на сервер...");
-// Получаем ответ в виде JSON {id: '2762bdac-3238-458c-81df-d896a78d7020', total: 119950}
-console.log(`Ответ с сервера: ${JSON.stringify(await connection.post(data))}`);
+// Валидация данных перед отправкой на сервер
+console.log("Проверка данных перед отправкой...");
+console.log(buyer.getData());
+const errors = buyer.validateData();
+console.log(errors);
+console.log(
+  `Результат проверки: ${errors ? "ошибка данных" + JSON.stringify(errors) : "Данные прошли проверку..."}`,
+);
+if (!errors) {
+  console.log("Отправка данных на сервер...");
+  // Получаем ответ в виде JSON {id: '2762bdac-3238-458c-81df-d896a78d7020', total: 119950}
+  console.log(
+    `Ответ с сервера: ${JSON.stringify(await connection.postOrderData(data))}`,
+  );
+}

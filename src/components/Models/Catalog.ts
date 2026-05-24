@@ -22,7 +22,9 @@ export class Catalog {
     return Array.from(this.products);
   }
   getProductById(id: string): IProduct | undefined {
-    let product = Array.from(this.products).find((product) => product.id == id);
+    const product: IProduct | undefined = Array.from(this.products).find(
+      (product) => product.id == id,
+    );
     return product;
   }
   saveProductDetailed(product: IProduct): void {

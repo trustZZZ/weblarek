@@ -1,4 +1,4 @@
-import { IApi, IResponse } from "../../types";
+import { IApi, IOrder, IResponse } from "../../types";
 import { Api } from "../base/Api";
 
 export class Connection {
@@ -8,12 +8,12 @@ export class Connection {
   }
 
   async get(uri: string): Promise<IResponse> {
-    const products = await this.api.get(uri) as IResponse;
+    const products: IResponse = await this.api.get(uri);
     return products;
   }
 
-  async post(data: Object): Promise<Object> {
-    const total = await this.api.post('/order/', data, "POST")
+  async post(data: IOrder): Promise<Object> {
+    const total = await this.api.post("/order/", data, "POST");
     return total;
   }
 }

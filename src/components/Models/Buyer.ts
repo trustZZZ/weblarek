@@ -1,12 +1,12 @@
 import { IBuyer } from "../../types";
 
 export class Buyer implements IBuyer {
-  public payment: "online" | "cash";
+  public payment: "card" | "cash";
   public address: string;
   public phone: string;
   public email: string;
   constructor() {
-    this.payment = "online";
+    this.payment = "card";
     this.address = "";
     this.phone = "";
     this.email = "";
@@ -53,7 +53,7 @@ export class Buyer implements IBuyer {
     };
   }
   clearData(): void {
-    this.payment = "online";
+    this.payment = "card";
     this.address = "";
     this.phone = "";
     this.email = "";

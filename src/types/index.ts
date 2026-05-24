@@ -10,7 +10,7 @@ export interface IApi {
 }
 
 export interface IBuyer {
-  payment: "online" | "cash";
+  payment: "card" | "cash";
   email: string;
   phone: string;
   address: string;
@@ -27,5 +27,10 @@ export interface IProduct {
 
 export interface IResponse {
   total: number;
-  items: [];
+  items: IProduct[];
+}
+
+export interface IOrder extends IBuyer {
+  items: string[];
+  total: number;
 }

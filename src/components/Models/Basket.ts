@@ -3,14 +3,15 @@ import { IProduct } from "../../types";
 export class Basket {
   wishedProducts: IProduct[];
   constructor() {
-    this.wishedProducts = new Array();
+    this.wishedProducts = new Array<IProduct>();
+  }
+
+  addToBasket(product: IProduct): void {
+    this.wishedProducts.push(product);
   }
 
   getBasketProducts(): IProduct[] {
     return this.wishedProducts;
-  }
-  addToBasket(product: IProduct): void {
-    this.wishedProducts.push(product);
   }
 
   deleteFromBasket(product: IProduct): void {
@@ -21,7 +22,7 @@ export class Basket {
   }
 
   clearBasket(): void {
-    this.wishedProducts = new Array();
+    this.wishedProducts = new Array<IProduct>();
   }
   getTotalPrice(): number {
     let totalPrice = 0;

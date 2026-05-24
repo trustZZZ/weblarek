@@ -1,52 +1,124 @@
-import './scss/styles.scss';
+import "./scss/styles.scss";
 import { Buyer } from "./components/Models/Buyer";
 import { Basket } from "./components/Models/Basket";
 import { Catalog } from "./components/Models/Catalog";
 import { apiProducts } from "./utils/data";
-import { Connection } from './components/Connection/connection';
-import { API_URL } from './utils/constants';
-import { IProduct } from './types';
-import { IResponse } from './types';
+import { Connection } from "./components/Connection/connection";
+import { API_URL } from "./utils/constants";
+import { IOrder, IProduct } from "./types";
+import { IResponse } from "./types";
 
 const buyer = new Buyer();
 const basket = new Basket();
 const catalog = new Catalog();
+const productsFromServer: IProduct[] = new Array<IProduct>();
 
-
-
-catalog.saveProducts(apiProducts.items);
-// console.log(catalog.getProducts());
-
-catalog.saveProductDetailed(apiProducts.items[0]);
-// console.log(catalog.getProductDetailed());
-
+// Проверка моделей
+// 1. Buyer
+// сохранения данных покупателя
 buyer.saveData({
-  payment: "online",
-  email: "y@e.ru",
+  payment: "card",
+  email: "test@test.ru",
   phone: "2389",
-  address: "ut ts aas",
+  address: "Marshal street",
 });
+// получение данных :покупателя
+console.log(
+  `Проверка сохранения данных пользователя: ${Object.values(buyer.getData())}`,
+);
+// Очистка данных покупателя и ее проверка
+console.log("Удаление данных о пользователе...");
+buyer.clearData();
+console.log(`Данные после отчистки: ${Object.values(buyer.getData())}`);
 
-// console.log(buyer.getData());
+// 2. Basket
+// добавить в корзину товары
+basket.addToBasket(apiProducts.items[0]);
+basket.addToBasket(apiProducts.items[1]);
+basket.addToBasket(apiProducts.items[2]);
+// проверка добавления в корзину
+console.log(`Товары в корзине:`);
+basket.getBasketProducts().forEach((el) => console.log(el));
+// удаление товара из корзины
+const productToDelete: IProduct = basket.getBasketProducts()[2];
+basket.deleteFromBasket(productToDelete);
+console.log(`Товар с id ${productToDelete.id} удален`);
+console.log(`Товары в корзине:`);
+basket.getBasketProducts().forEach((el) => console.log(el));
 
-// проверка запросов через api
+// получение полной суммы товаров
+console.log(`Сумма всех товаров в корзине: ${basket.getTotalPrice()}`);
+
+// подсчет количества товаров в корзине
+console.log(`Товаров в корзине: ${basket.countBasketProducts()}`);
+
+// проверка наличия товара
+console.log(
+  `Товар с id c101ab44-ed99-4a54-990d-47aa2bb4e7d9: ${basket.isInBasketById("c101ab44-ed99-4a54-990d-47aa2bb4e7d9") ? "есть" : "нет"}`,
+);
+
+// удаление всех товаров из корзины
+console.log("Очистка корзины...");
+basket.clearBasket();
+console.log(`Товаров в корзине: ${basket.countBasketProducts()}`);
+
+// 3. Catalog
+// сохранение товаров в каталоге
+catalog.saveProducts(apiProducts.items);
+// проверка получения и сохранения товаров в каталоге
+console.log("Проверка получения и сохранения товаров в каталоге");
+console.log(catalog.getProducts());
+// получение товара по id
+console.log(
+  `Поиск товара по id='c101ab44-ed99-4a54-990d-47aa2bb4e7d9': описание - '${catalog.getProductById("c101ab44-ed99-4a54-990d-47aa2bb4e7d9")?.description}'`,
+);
+// сохранение товара для детального отображения
+catalog.saveProductDetailed(apiProducts.items[0]);
+// проверка сохранения и получения
+console.log(
+  `Товар для детального просмотра: ${JSON.stringify(catalog.getProductDetailed())}`,
+);
+
+// 4. Проверка запросов через api
+
+// асинхронная функция для обработки запроса с сервера
+async function downloadData(): Promise<IResponse> {
+  const response: IResponse = await connection.get("/product/");
+  productsFromServer.push(...response.items);
+  return response;
+}
+
 const connection = new Connection(API_URL);
-const response: IResponse = await connection.get('/product/');
-const products: IProduct[] = response.items;
-
+await downloadData().catch(console.error);
+console.log("Получение данных с сервера:");
+console.log(productsFromServer);
 
 // Добавляем товары в корзину, используя данные с сервера, предварительно фильтруем данные у которых нет цены
-products.filter(product => product.price != null).forEach(product => basket.addToBasket(product));
+productsFromServer
+  .filter((product) => product.price != null)
+  .forEach((product) => basket.addToBasket(product));
 
-// Формируем данные для отправки на сервер, ${total} - общая сумма товаров в корзине, ${items} - массив id товаров из корзины
-const productData: Object = basket.getBasketProducts().reduce((acc, item) => {
-  if (item.price) {
-    acc.total += item.price;
-  }
-  acc.items.push(item.id);
-  return acc
-}, {"total": 0, "items": new Array()});
-// console.log(`Price: ${Object.values(productData)}`)
+console.log(
+  "Добавление только тех товаров, у которых есть цена. Товаров в корзине: " +
+    basket.getBasketProducts().length,
+);
 
+// Добавляем пользователя
+buyer.saveData({
+  payment: "card",
+  email: "test@test.ru",
+  phone: "2389",
+  address: "Marshal street",
+});
+
+// Создане массива данных для отправки данных на сервер
+const data: IOrder = Object.assign(
+  {
+    total: basket.getTotalPrice(),
+    items: basket.getBasketProducts().map((product) => product.id),
+  },
+  buyer,
+);
+console.log("Отправка данных на сервер...");
 // Получаем ответ в виде JSON {id: '2762bdac-3238-458c-81df-d896a78d7020', total: 119950}
-console.log(await connection.post(Object.assign(buyer, productData)));
+console.log(`Ответ с сервера: ${JSON.stringify(await connection.post(data))}`);

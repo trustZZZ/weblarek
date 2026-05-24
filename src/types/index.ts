@@ -10,11 +10,13 @@ export interface IApi {
 }
 
 export interface IBuyer {
-  payment: "card" | "cash";
+  payment: IPaymentType;
   email: string;
   phone: string;
   address: string;
 }
+
+export type IPaymentType = "card" | "cash" | null;
 
 export interface IProduct {
   id: string;

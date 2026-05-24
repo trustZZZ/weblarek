@@ -1,22 +1,15 @@
 import { IProduct } from "../../types";
 
 export class Catalog {
-  protected products: Set<IProduct>;
-  protected productDetailed: IProduct;
+  protected products: Array<IProduct>;
+  protected productDetailed: IProduct | null;
   constructor() {
-    this.products = new Set();
-    this.productDetailed = {
-      id: "",
-      description: "",
-      image: "",
-      title: "",
-      category: "",
-      price: 0,
-    };
+    this.products = new Array<IProduct>();
+    this.productDetailed = null;
   }
 
   saveProducts(products: IProduct[]): void {
-    products.forEach((product) => this.products.add(product));
+    this.products.concat(products);
   }
   getProducts(): IProduct[] {
     return Array.from(this.products);
@@ -30,7 +23,7 @@ export class Catalog {
   saveProductDetailed(product: IProduct): void {
     this.productDetailed = product;
   }
-  getProductDetailed(): IProduct {
+  getProductDetailed(): IProduct | null {
     return this.productDetailed;
   }
 }

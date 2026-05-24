@@ -7,6 +7,7 @@ import { Connection } from "./components/Connection/connection";
 import { API_URL } from "./utils/constants";
 import { IOrder, IProduct } from "./types";
 import { IResponse } from "./types";
+import { Api } from "./components/base/Api";
 
 const buyer = new Buyer();
 const basket = new Basket();
@@ -17,14 +18,12 @@ const productsFromServer: IProduct[] = new Array<IProduct>();
 // 1. Buyer
 // сохранения данных покупателя
 buyer.saveData({
-  payment: "card",
-  email: "test@test.ru",
   phone: "2389",
   address: "Marshal street",
 });
 // получение данных :покупателя
 console.log(
-  `Проверка сохранения данных пользователя: ${Object.values(buyer.getData())}`,
+  `Проверка сохранения данных пользователя: ${JSON.stringify(Object.values(buyer.getData()))}`,
 );
 // Очистка данных покупателя и ее проверка
 console.log("Удаление данных о пользователе...");
@@ -72,6 +71,7 @@ console.log(catalog.getProducts());
 console.log(
   `Поиск товара по id='c101ab44-ed99-4a54-990d-47aa2bb4e7d9': описание - '${catalog.getProductById("c101ab44-ed99-4a54-990d-47aa2bb4e7d9")?.description}'`,
 );
+console.log(`Товар с несущействующим id='123': ${catalog.getProductById("123")}`);
 // сохранение товара для детального отображения
 catalog.saveProductDetailed(apiProducts.items[0]);
 // проверка сохранения и получения
@@ -83,12 +83,12 @@ console.log(
 
 // асинхронная функция для обработки запроса с сервера
 async function downloadData(): Promise<IResponse> {
-  const response: IResponse = await connection.get("/product/");
+  const response: IResponse = await connection.get();
   productsFromServer.push(...response.items);
   return response;
 }
 
-const connection = new Connection(API_URL);
+const connection = new Connection(new Api(API_URL));
 await downloadData().catch(console.error);
 console.log("Получение данных с сервера:");
 console.log(productsFromServer);

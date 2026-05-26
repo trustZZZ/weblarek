@@ -5,8 +5,7 @@ import { Catalog } from "./components/Models/Catalog";
 import { apiProducts } from "./utils/data";
 import { Connection } from "./components/Connection/connection";
 import { API_URL } from "./utils/constants";
-import { IOrder, IPaymentType, IProduct } from "./types";
-import { IResponse } from "./types";
+import { IGetResponse, IOrder, TPayment, IProduct } from "./types";
 import { Api } from "./components/base/Api";
 
 const buyer = new Buyer();
@@ -20,16 +19,21 @@ const productsFromServer: IProduct[] = new Array<IProduct>();
 buyer.saveData({
   phone: "2389",
   address: "Marshal street",
+  email: "slsd",
+  payment: "card",
 });
 // получение данных :покупателя
 console.log(
   `Проверка сохранения данных пользователя: ${JSON.stringify(Object.values(buyer.getData()))}`,
 );
+console.log(`Валидация данных: ${JSON.stringify(buyer.validateData())}`);
 // Очистка данных покупателя и ее проверка
 console.log("Удаление данных о пользователе...");
 buyer.clearData();
 console.log(`Данные после отчистки: ${Object.values(buyer.getData())}`);
-
+console.log(
+  `Валидация данных после отчистки: ${JSON.stringify(buyer.validateData())}`,
+);
 // 2. Basket
 // добавить в корзину товары
 basket.addToBasket(apiProducts.items[0]);
@@ -81,59 +85,15 @@ console.log(
   `Товар для детального просмотра: ${JSON.stringify(catalog.getProductDetailed())}`,
 );
 
-// 4. Проверка запросов через api
-
-// асинхронная функция для обработки запроса с сервера
-async function downloadData(): Promise<IResponse> {
-  const response: IResponse = await connection.getProductsFromServer();
-  productsFromServer.push(...response.items);
-  return response;
-}
+// 4.  Подключение api
 
 const connection = new Connection(new Api(API_URL));
-await downloadData().catch(console.error);
-console.log("Получение данных с сервера:");
-console.log(productsFromServer);
-
-// Добавляем товары в корзину, используя данные с сервера, предварительно фильтруем данные у которых нет цены
-productsFromServer
-  .filter((product) => product.price != null)
-  .forEach((product) => basket.addToBasket(product));
-
-console.log(
-  "Добавление только тех товаров, у которых есть цена. Товаров в корзине: " +
-    basket.getBasketProducts().length,
-);
-
-const payment: IPaymentType = "card";
-// Добавляем пользователя
-buyer.saveData({
-  payment: payment,
-  email: "test@test.ru",
-  phone: "2389",
-  address: "Marshal street",
-});
-
-// Создане массива данных для отправки данных на сервер
-const data: IOrder = Object.assign(
-  {
-    total: basket.getTotalPrice(),
-    items: basket.getBasketProducts().map((product) => product.id),
-  },
-  buyer.getData(),
-);
-// Валидация данных перед отправкой на сервер
-console.log("Проверка данных перед отправкой...");
-console.log(buyer.getData());
-const errors = buyer.validateData();
-console.log(errors);
-console.log(
-  `Результат проверки: ${errors ? "ошибка данных" + JSON.stringify(errors) : "Данные прошли проверку..."}`,
-);
-if (!errors) {
-  console.log("Отправка данных на сервер...");
-  // Получаем ответ в виде JSON {id: '2762bdac-3238-458c-81df-d896a78d7020', total: 119950}
-  console.log(
-    `Ответ с сервера: ${JSON.stringify(await connection.postOrderData(data))}`,
-  );
-}
+connection
+  .getProductsFromServer()
+  .then((result) => {
+    catalog.saveProducts(result.items);
+    console.log(
+      `Результат обработки ответа с сервера (добавление в товаров в каталог): ${JSON.stringify(catalog.getProducts())}`,
+    );
+  })
+  .catch(console.error);

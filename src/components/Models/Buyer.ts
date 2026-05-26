@@ -1,7 +1,7 @@
-import { IBuyer, IPaymentType } from "../../types";
+import { IBuyer, TPayment } from "../../types";
 
 export class Buyer {
-  protected payment: IPaymentType;
+  protected payment: TPayment | null;
   protected address: string;
   protected phone: string;
   protected email: string;
@@ -29,36 +29,30 @@ export class Buyer {
     this.phone = "";
     this.email = "";
   }
-  validateData(): Record<string, string> | null {
+
+  validateData(): Record<string, string> {
     const errors: Record<string, string> = {};
 
     // Проверяем адрес, учитываем возможность null/undefined
-    if (!this.address || this.address.trim().length === 0) {
+    if (!this.address?.trim()) {
       errors.address = "неверно задан адрес";
     }
 
     // Проверяем способ оплаты
-    if (this.payment === null || this.payment.trim().length === 0) {
+    if (!this.payment?.trim()) {
       errors.payment = "неверно указан способ оплаты";
     }
 
     // Проверяем телефон
-    if (!this.phone || this.phone.trim().length === 0) {
+    if (!this.phone?.trim()) {
       errors.phone = "не указан номер телефона";
     }
 
     // Проверяем email
-    if (!this.email || this.email.trim().length === 0) {
+    if (!this.email?.trim()) {
       errors.email = "неверно указан адрес электронной почты";
     }
 
-    // Если есть ошибки — показываем алерт и возвращаем объект ошибок
-    if (Object.keys(errors).length > 0) {
-      alert("Ошибка валидации! " + `${Object.values(errors).join(", ")}`);
-      return errors;
-    }
-
-    // Если ошибок нет — возвращаем null
-    return null;
+    return errors;
   }
 }

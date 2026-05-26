@@ -1,16 +1,16 @@
-import { IApi, IOrder, IResponse } from "../../types";
+import { IApi, IGetResponse, IOrder, IPostResponse } from "../../types";
 
 export class Connection {
-  api: IApi;
-  constructor(API: IApi) {
-    this.api = API;
+  protected api: IApi;
+  constructor(api: IApi) {
+    this.api = api;
   }
 
-  async getProductsFromServer(): Promise<IResponse> {
-    return this.api.get<IResponse>("/product/");
+  async getProductsFromServer(): Promise<IGetResponse> {
+    return this.api.get<IGetResponse>("/product/");
   }
 
-  async postOrderData(data: IOrder): Promise<IOrder> {
-    return this.api.post<IOrder>("/order/", data, "POST");
+  async postOrderData(data: IOrder): Promise<IPostResponse> {
+    return this.api.post<IPostResponse>("/order/", data, "POST");
   }
 }

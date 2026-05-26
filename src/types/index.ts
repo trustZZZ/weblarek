@@ -10,13 +10,13 @@ export interface IApi {
 }
 
 export interface IBuyer {
-  payment: IPaymentType;
+  payment: TPayment | null;
   email: string;
   phone: string;
   address: string;
 }
 
-export type IPaymentType = "card" | "cash" | null;
+export type TPayment = "card" | "cash";
 
 export interface IProduct {
   id: string;
@@ -27,12 +27,18 @@ export interface IProduct {
   price: number | null;
 }
 
-export interface IResponse {
+interface IResponse {
   total: number;
+}
+
+export interface IPostResponse extends IResponse {
+  id: string;
+}
+
+export interface IGetResponse extends IResponse {
   items: IProduct[];
 }
 
-export interface IOrder extends IBuyer {
+export interface IOrder extends IBuyer, IResponse {
   items: string[];
-  total: number;
 }

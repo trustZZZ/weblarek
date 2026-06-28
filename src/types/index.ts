@@ -1,3 +1,5 @@
+import { BasketCard } from "../components/View/Card/Card";
+
 export type ApiPostMethods = "POST" | "PUT" | "DELETE";
 
 export interface IApi {
@@ -7,6 +9,10 @@ export interface IApi {
     data: object,
     method?: ApiPostMethods,
   ): Promise<T>;
+}
+
+export interface IImage {
+  imageSrc: string | null;
 }
 
 export interface IBuyer {
@@ -31,6 +37,10 @@ interface IResponse {
   total: number;
 }
 
+export interface IAdress {
+  address: string | null;
+}
+
 export interface IPostResponse extends IResponse {
   id: string;
 }
@@ -41,4 +51,18 @@ export interface IGetResponse extends IResponse {
 
 export interface IOrder extends IBuyer, IResponse {
   items: string[];
+}
+
+export interface IDelete {
+  product: IProduct,
+  card: BasketCard;
+}
+
+export interface IPaymentCheck {
+  payment: TPayment | null;
+}
+
+export interface IContacts {
+  phone: string,
+  email: string
 }

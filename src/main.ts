@@ -2,98 +2,227 @@ import "./scss/styles.scss";
 import { Buyer } from "./components/Models/Buyer";
 import { Basket } from "./components/Models/Basket";
 import { Catalog } from "./components/Models/Catalog";
-import { apiProducts } from "./utils/data";
 import { Connection } from "./components/Connection/connection";
-import { API_URL } from "./utils/constants";
-import { IGetResponse, IOrder, TPayment, IProduct } from "./types";
+import { API_URL, CDN_URL } from "./utils/constants";
+import { IAdress, IContacts, IDelete, IPaymentCheck, IProduct } from "./types";
 import { Api } from "./components/base/Api";
+import { Header } from "./components/View/Header/Header";
+import { EventEmitter } from "./components/base/Events";
+import { Modal } from "./components/View/Modal/Modal";
+import { OrderSuccessful } from "./components/View/Order/Order";
+import { cloneTemplate, ensureElement } from "./utils/utils";
+import { Gallery } from "./components/View/Gallery/Gallery";
+import {
+  BasketCard,
+  CatalogCard,
+  PreviewCard,
+} from "./components/View/Card/Card";
+import { BasketView } from "./components/View/Basket/BasketView";
+import { ContactsForm, OrderForm } from "./components/View/Forms/Forms";
+const events = new EventEmitter();
 
-const buyer = new Buyer();
-const basket = new Basket();
-const catalog = new Catalog();
-const productsFromServer: IProduct[] = new Array<IProduct>();
+const buyer = new Buyer(events);
+const basket = new Basket(events);
+const catalog = new Catalog(events);
 
-// Проверка моделей
-// 1. Buyer
-// сохранения данных покупателя
-buyer.saveData({
-  phone: "2389",
-  address: "Marshal street",
-  email: "slsd",
-  payment: "card",
-});
-// получение данных :покупателя
-console.log(
-  `Проверка сохранения данных пользователя: ${JSON.stringify(Object.values(buyer.getData()))}`,
+// Подключение api
+const api = new Api(API_URL);
+
+const connection = new Connection(api);
+
+// Константы для темплейтов элементов магазина
+const templateCardCatalog = "#card-catalog";
+const templateCardPreview = "#card-preview";
+const templateModal = "#modal-container";
+const templateBasketView = "#basket";
+const templateBasketCard = "#card-basket";
+const templateOrderFrom = "#order";
+const templateContactsFrom = "#contacts";
+const templateOrderSuccessful = "#success";
+
+// Инициализация компонентов
+const orderSuccessful = new OrderSuccessful(
+  events,
+  cloneTemplate<HTMLElement>(templateOrderSuccessful),
 );
-console.log(`Валидация данных: ${JSON.stringify(buyer.validateData())}`);
-// Очистка данных покупателя и ее проверка
-console.log("Удаление данных о пользователе...");
-buyer.clearData();
-console.log(`Данные после отчистки: ${Object.values(buyer.getData())}`);
-console.log(
-  `Валидация данных после отчистки: ${JSON.stringify(buyer.validateData())}`,
+const container = ensureElement<HTMLElement>(".page__wrapper");
+const orderForm = new OrderForm(
+  events,
+  cloneTemplate<HTMLElement>(templateOrderFrom),
 );
-// 2. Basket
-// добавить в корзину товары
-basket.addToBasket(apiProducts.items[0]);
-basket.addToBasket(apiProducts.items[1]);
-basket.addToBasket(apiProducts.items[2]);
-// проверка добавления в корзину
-console.log(`Товары в корзине:`);
-basket.getBasketProducts().forEach((el) => console.log(el));
-// удаление товара из корзины
-const productToDelete: IProduct = basket.getBasketProducts()[2];
-basket.deleteFromBasket(productToDelete);
-console.log(`Товар с id ${productToDelete.id} удален`);
-console.log(`Товары в корзине:`);
-basket.getBasketProducts().forEach((el) => console.log(el));
-
-// получение полной суммы товаров
-console.log(`Сумма всех товаров в корзине: ${basket.getTotalPrice()}`);
-
-// подсчет количества товаров в корзине
-console.log(`Товаров в корзине: ${basket.countBasketProducts()}`);
-
-// проверка наличия товара
-console.log(
-  `Товар с id c101ab44-ed99-4a54-990d-47aa2bb4e7d9: ${basket.isInBasketById("c101ab44-ed99-4a54-990d-47aa2bb4e7d9") ? "есть" : "нет"}`,
+const contactsForm = new ContactsForm(
+  events,
+  cloneTemplate<HTMLElement>(templateContactsFrom),
 );
-
-// удаление всех товаров из корзины
-console.log("Очистка корзины...");
-basket.clearBasket();
-console.log(`Товаров в корзине: ${basket.countBasketProducts()}`);
-
-// 3. Catalog
-// сохранение товаров в каталоге
-catalog.saveProducts(apiProducts.items);
-// проверка получения и сохранения товаров в каталоге
-console.log("Проверка получения и сохранения товаров в каталоге");
-console.log(catalog.getProducts());
-// получение товара по id
-console.log(
-  `Поиск товара по id='c101ab44-ed99-4a54-990d-47aa2bb4e7d9': описание - '${catalog.getProductById("c101ab44-ed99-4a54-990d-47aa2bb4e7d9")?.description}'`,
-);
-console.log(
-  `Товар с несущействующим id='123': ${catalog.getProductById("123")}`,
-);
-// сохранение товара для детального отображения
-catalog.saveProductDetailed(apiProducts.items[0]);
-// проверка сохранения и получения
-console.log(
-  `Товар для детального просмотра: ${JSON.stringify(catalog.getProductDetailed())}`,
+const gallery = new Gallery(container);
+const header = new Header(events, ensureElement<HTMLElement>(".header"));
+const modal = new Modal(events, ensureElement<HTMLElement>(templateModal));
+const basketView = new BasketView(
+  events,
+  cloneTemplate<HTMLElement>(templateBasketView),
 );
 
-// 4.  Подключение api
-
-const connection = new Connection(new Api(API_URL));
+// Подключение к API приложения
 connection
   .getProductsFromServer()
   .then((result) => {
+    result.items.forEach((product) => {
+      product.image = `${CDN_URL}${product.image}`;
+    });
     catalog.saveProducts(result.items);
-    console.log(
-      `Результат обработки ответа с сервера (добавление в товаров в каталог): ${JSON.stringify(catalog.getProducts())}`,
-    );
   })
   .catch(console.error);
+
+// Обработка событий
+// 1. Получение карточкек с сервера
+events.on("gallery:changed", () => {
+  const itemCard = catalog.getProducts().map((item) => {
+    const card = new CatalogCard(
+      cloneTemplate<HTMLElement>(templateCardCatalog),
+      {
+        onClick: () => {
+          events.emit("card:selected", item);
+        },
+      },
+    );
+    return card.render(item);
+  });
+  gallery.render({ catalog: itemCard });
+});
+// 2. Выбор карточки пользователем с подробным описанием
+events.on("card:selected", (product: IProduct) => {
+  // поиск карточки по ID
+  const cardByID = catalog.getProductById(product.id);
+  // Если карточка найдена, то сохраняем ее в модели данных
+  if (cardByID) {
+    catalog.saveProductDetailed(cardByID);
+  }
+});
+
+events.on("catalog:cardDetailedChanged", (product: IProduct) => {
+  // Отображение
+  const card = new PreviewCard(
+    cloneTemplate<HTMLElement>(templateCardPreview),
+    {
+      onClick: () => {
+        events.emit("card:addToBasket", product);
+      },
+    },
+  );
+  modal.render({ content: card.render(product) });
+});
+
+// 3. Пользователь добавил карточку в корзину
+events.on("card:addToBasket", (product: IProduct) => {
+  // Добавление карточки в модель
+  basket.addToBasket(product);
+});
+
+// Если карточка добавилась, то отображаем ее
+events.on("basket:productAdded", (product: IProduct) => {
+  const basketCard = new BasketCard(
+    cloneTemplate<HTMLLIElement>(templateBasketCard),
+    {
+      onClick: () =>
+        events.emit("basket:deleteItem", {
+          product: product,
+          card: basketCard,
+        }),
+    },
+  );
+  basketCard.render({
+    seqNumber: basket.countBasketProducts(),
+    price: product.price ?? 0,
+  });
+  basketView.render({
+    newCard: basketCard.render(),
+    totalPrice: basket.getTotalPrice(),
+  });
+  header.render({ counter: basket.countBasketProducts() });
+});
+
+// 4. Пользователь открыл корзину
+events.on("basket:open", () => {
+  basketView.makeOrder = basket.countBasketProducts() > 0;
+  modal.render({ content: basketView.render() });
+});
+
+events.on("modal:close", () => {
+  modal.render().classList.remove("modal_active");
+});
+
+// 5. Пользователь удалил товар из корзины
+events.on("basket:deleteItem", (event: IDelete) => {
+  basket.deleteFromBasket(event.product);
+  basketView.deleteItem(event.card.render());
+
+  basketView.totalPrice = basket.getTotalPrice();
+  basketView.makeOrder = basket.countBasketProducts() > 0;
+});
+
+// 6. Пользователь выбрал "Оплатить"
+events.on("basket:order", () => {
+  modal.render({ content: orderForm.render() });
+});
+
+// 7. Пользователь выбрал способ оплаты
+events.on("form:paymentSelected", (event: IPaymentCheck) => {
+  // проверка валидности формы, если да, то
+  let payment = null;
+  if (!buyer.getData().payment || buyer.getData().payment != event.payment) {
+    payment = event.payment;
+  }
+  orderForm.payment = payment;
+    buyer.saveData({
+      payment: payment,
+    });
+});
+
+// 8. Пользователь заполнил адресс
+events.on("form:address", (event: IAdress) => {
+  // проверка валидности формы, если да, то
+  buyer.saveData({ address: event.address });
+});
+
+// 9. Пользователь заполнил контактные данные
+events.on("form:contacts", (event: IContacts) => {
+  // проверка валидности формы, если да, то
+
+  if (event?.email) {
+    buyer.saveData({ email: event?.email });
+  }
+  if (event?.phone) {
+    buyer.saveData({ phone: event?.phone });
+  }
+});
+
+events.on("user:dataChanged", () => {
+  // Если пользователь заполнил данные, то кнопка становиться активной
+  if (!buyer.validateData()?.email && !buyer.validateData()?.phone) {
+    contactsForm.active = true;
+  } else if (buyer.validateData()?.email || buyer.validateData()?.phone) {
+    contactsForm.active = false;
+  }
+  if (!buyer.validateData()?.address && !buyer.validateData()?.payment) {
+    orderForm.active = true;
+  } else if (buyer.validateData()?.address || buyer.validateData()?.payment) {
+    orderForm.active = false;
+  }
+});
+
+// 10. Переход от формы с оплатой до формы с контактными данными
+events.on("form:next", () => {
+  modal.render({ content: contactsForm.render() });
+});
+
+// 11. Окно успешной оплаты
+events.on("form:pay", () => {
+  modal.render({
+    content: orderSuccessful.render({ totalPrice: basket.getTotalPrice() }),
+  });
+
+  basket.clearBasket();
+  header.render({ counter: 0 });
+  basketView.clear();
+  basketView.totalPrice = basket.getTotalPrice();
+});

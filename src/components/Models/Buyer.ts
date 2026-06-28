@@ -1,11 +1,12 @@
 import { IBuyer, TPayment } from "../../types";
+import { IEvents } from "../base/Events";
 
 export class Buyer {
   protected payment: TPayment | null;
   protected address: string;
   protected phone: string;
   protected email: string;
-  constructor() {
+  constructor(protected events: IEvents) {
     this.payment = null;
     this.address = "";
     this.phone = "";
@@ -14,7 +15,9 @@ export class Buyer {
 
   saveData<T>(data: Record<string, T>): void {
     Object.assign(this, data);
+    this.events.emit("user:dataChanged");
   }
+
   getData(): IBuyer {
     return {
       payment: this.payment,

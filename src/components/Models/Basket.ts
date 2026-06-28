@@ -1,13 +1,15 @@
 import { IProduct } from "../../types";
+import { IEvents } from "../base/Events";
 
 export class Basket {
   protected wishedProducts: IProduct[];
-  constructor() {
+  constructor(protected events: IEvents) {
     this.wishedProducts = new Array<IProduct>();
   }
 
   addToBasket(product: IProduct): void {
     this.wishedProducts.push(product);
+    this.events.emit("basket:productAdded", product);
   }
 
   getBasketProducts(): IProduct[] {

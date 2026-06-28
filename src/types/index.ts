@@ -66,6 +66,3 @@ export interface IContacts {
   phone: string,
   email: string
 }
-
-export interface IErrors extends IBuyer {
-}

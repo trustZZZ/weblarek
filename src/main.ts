@@ -4,7 +4,7 @@ import { Basket } from "./components/Models/Basket";
 import { Catalog } from "./components/Models/Catalog";
 import { Connection } from "./components/Connection/connection";
 import { API_URL, CDN_URL } from "./utils/constants";
-import { IAdress, IContacts, IErrors, IOrder, IPaymentCheck, IProduct } from "./types";
+import { IAdress, IContacts, IOrder, IPaymentCheck, IProduct } from "./types";
 import { Api } from "./components/base/Api";
 import { Header } from "./components/View/Header/Header";
 import { EventEmitter } from "./components/base/Events";

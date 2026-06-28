@@ -31,6 +31,7 @@ export class Buyer {
     this.address = "";
     this.phone = "";
     this.email = "";
+    this.events.emit("user:dataChanged");
   }
 
   validateData(): Record<string, string> {

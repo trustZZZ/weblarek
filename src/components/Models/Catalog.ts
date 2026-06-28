@@ -26,7 +26,9 @@ export class Catalog {
   }
 
   saveProductDetailed(product: IProduct): void {
-    this.productDetailed = product;
+    if (this.productDetailed != product) {
+      this.productDetailed = product;
+    }
     this.events.emit("catalog:cardDetailedChanged", product);
   }
 

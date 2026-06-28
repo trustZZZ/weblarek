@@ -1,4 +1,4 @@
-import { BasketCard } from "../components/View/Card/Card";
+import { BasketCard } from "../components/View/Card/BasketCard";
 
 export type ApiPostMethods = "POST" | "PUT" | "DELETE";
 
@@ -65,4 +65,7 @@ export interface IPaymentCheck {
 export interface IContacts {
   phone: string,
   email: string
+}
+
+export interface IErrors extends IBuyer {
 }

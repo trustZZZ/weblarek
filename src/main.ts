@@ -4,7 +4,7 @@ import { Basket } from "./components/Models/Basket";
 import { Catalog } from "./components/Models/Catalog";
 import { Connection } from "./components/Connection/connection";
 import { API_URL, CDN_URL } from "./utils/constants";
-import { IAdress, IContacts, IDelete, IPaymentCheck, IProduct } from "./types";
+import { IAdress, IContacts, IErrors, IOrder, IPaymentCheck, IProduct } from "./types";
 import { Api } from "./components/base/Api";
 import { Header } from "./components/View/Header/Header";
 import { EventEmitter } from "./components/base/Events";
@@ -12,13 +12,12 @@ import { Modal } from "./components/View/Modal/Modal";
 import { OrderSuccessful } from "./components/View/Order/Order";
 import { cloneTemplate, ensureElement } from "./utils/utils";
 import { Gallery } from "./components/View/Gallery/Gallery";
-import {
-  BasketCard,
-  CatalogCard,
-  PreviewCard,
-} from "./components/View/Card/Card";
 import { BasketView } from "./components/View/Basket/BasketView";
-import { ContactsForm, OrderForm } from "./components/View/Forms/Forms";
+import { OrderForm } from "./components/View/Forms/OrderForm";
+import { ContactsForm } from "./components/View/Forms/ContactsForm";
+import { CatalogCard } from "./components/View/Card/CatalogCard";
+import { PreviewCard } from "./components/View/Card/PreviewCard";
+import { BasketCard } from "./components/View/Card/BasketCard";
 const events = new EventEmitter();
 
 const buyer = new Buyer(events);
@@ -89,6 +88,7 @@ events.on("gallery:changed", () => {
   });
   gallery.render({ catalog: itemCard });
 });
+
 // 2. Выбор карточки пользователем с подробным описанием
 events.on("card:selected", (product: IProduct) => {
   // поиск карточки по ID
@@ -105,77 +105,75 @@ events.on("catalog:cardDetailedChanged", (product: IProduct) => {
     cloneTemplate<HTMLElement>(templateCardPreview),
     {
       onClick: () => {
-        events.emit("card:addToBasket", product);
+        const selectedProduct = catalog.getProductDetailed();
+        if (selectedProduct) {
+          const isInBasket = basket.isInBasketById(selectedProduct.id);
+          if (isInBasket) {
+            basket.deleteFromBasket(selectedProduct); // удаляем из корзины
+          } else {
+            basket.addToBasket(selectedProduct); // добавляем в корзину
+          }
+          // Обновляем текст кнопки
+          card.buttonText = isInBasket ? "В корзину" : "Удалить из корзины";
+        }
       },
     },
   );
-  modal.render({ content: card.render(product) });
+  // Обновляем текст кнопки
+  card.buttonText = basket.isInBasketById(product.id)
+    ? "Удалить из корзины"
+    : "В корзину";
+  modal.open(card.render(product));
 });
 
 // 3. Пользователь добавил карточку в корзину
-events.on("card:addToBasket", (product: IProduct) => {
+events.on("card:addToBasket", () => {
   // Добавление карточки в модель
-  basket.addToBasket(product);
+  const product = catalog.getProductDetailed();
+  if (product) {
+    basket.addToBasket(product);
+  }
 });
 
 // Если карточка добавилась, то отображаем ее
-events.on("basket:productAdded", (product: IProduct) => {
-  const basketCard = new BasketCard(
-    cloneTemplate<HTMLLIElement>(templateBasketCard),
-    {
-      onClick: () =>
-        events.emit("basket:deleteItem", {
-          product: product,
-          card: basketCard,
-        }),
-    },
-  );
-  basketCard.render({
-    seqNumber: basket.countBasketProducts(),
-    price: product.price ?? 0,
-  });
-  basketView.render({
-    newCard: basketCard.render(),
-    totalPrice: basket.getTotalPrice(),
+events.on("basket:changed", () => {
+  const basketItems = basket.getBasketProducts().map((product, index) => {
+    const basketCard = new BasketCard(
+      cloneTemplate<HTMLLIElement>(templateBasketCard),
+      {
+        onClick: () => basket.deleteFromBasket(product),
+      },
+    );
+    return basketCard.render({
+      seqNumber: index + 1,
+      price: product.price ?? 0,
+      title: product.title,
+    });
   });
   header.render({ counter: basket.countBasketProducts() });
+  basketView.render({
+    items: basketItems,
+    totalPrice: basket.getTotalPrice(),
+  });
+  basketView.orederButtonActive = basket.getBasketProducts().length != 0;
 });
 
 // 4. Пользователь открыл корзину
 events.on("basket:open", () => {
-  basketView.makeOrder = basket.countBasketProducts() > 0;
-  modal.render({ content: basketView.render() });
-});
-
-events.on("modal:close", () => {
-  modal.render().classList.remove("modal_active");
-});
-
-// 5. Пользователь удалил товар из корзины
-events.on("basket:deleteItem", (event: IDelete) => {
-  basket.deleteFromBasket(event.product);
-  basketView.deleteItem(event.card.render());
-
-  basketView.totalPrice = basket.getTotalPrice();
-  basketView.makeOrder = basket.countBasketProducts() > 0;
+  modal.open(basketView.render());
 });
 
 // 6. Пользователь выбрал "Оплатить"
 events.on("basket:order", () => {
-  modal.render({ content: orderForm.render() });
+  modal.open(orderForm.render());
 });
 
 // 7. Пользователь выбрал способ оплаты
 events.on("form:paymentSelected", (event: IPaymentCheck) => {
-  // проверка валидности формы, если да, то
-  let payment = null;
-  if (!buyer.getData().payment || buyer.getData().payment != event.payment) {
-    payment = event.payment;
-  }
-  orderForm.payment = payment;
-    buyer.saveData({
-      payment: payment,
-    });
+  orderForm.payment = event.payment;
+  buyer.saveData({
+    payment: event.payment,
+  });
 });
 
 // 8. Пользователь заполнил адресс
@@ -185,44 +183,65 @@ events.on("form:address", (event: IAdress) => {
 });
 
 // 9. Пользователь заполнил контактные данные
-events.on("form:contacts", (event: IContacts) => {
-  // проверка валидности формы, если да, то
-
-  if (event?.email) {
-    buyer.saveData({ email: event?.email });
-  }
-  if (event?.phone) {
-    buyer.saveData({ phone: event?.phone });
-  }
+events.on("contacts-form:email", (event: IContacts) => {
+  buyer.saveData({ email: event.email });
+});
+events.on("contacts-form:phone", (event: IContacts) => {
+  buyer.saveData({ phone: event.phone });
 });
 
+// 10. Данные пользователя изменились
 events.on("user:dataChanged", () => {
+  const errors = buyer.validateData();
   // Если пользователь заполнил данные, то кнопка становиться активной
-  if (!buyer.validateData()?.email && !buyer.validateData()?.phone) {
-    contactsForm.active = true;
-  } else if (buyer.validateData()?.email || buyer.validateData()?.phone) {
-    contactsForm.active = false;
-  }
-  if (!buyer.validateData()?.address && !buyer.validateData()?.payment) {
+  const orderErrors = [errors?.address, errors?.payment]
+    .filter(Boolean)
+    .join("; ");
+  if (orderErrors.length == 0) {
     orderForm.active = true;
-  } else if (buyer.validateData()?.address || buyer.validateData()?.payment) {
+    orderForm.addressText = buyer.getData().address;
+    orderForm.error = "";
+  } else {
+    orderForm.error = orderErrors;
     orderForm.active = false;
   }
+
+  const contactsErrors = [errors?.email, errors?.phone]
+    .filter(Boolean)
+    .join("; ");
+  console.log(buyer.getData());
+  if (contactsErrors.length == 0) {
+    contactsForm.active = true;
+    contactsForm.emailText = buyer.getData().email;
+    contactsForm.phoneText = buyer.getData().phone;
+    contactsForm.error = "";
+  } else {
+    contactsForm.error = contactsErrors;
+    contactsForm.active = false;
+  }
 });
 
-// 10. Переход от формы с оплатой до формы с контактными данными
+// 11. Переход от формы с оплатой до формы с контактными данными
 events.on("form:next", () => {
-  modal.render({ content: contactsForm.render() });
+  modal.open(contactsForm.render());
 });
 
-// 11. Окно успешной оплаты
-events.on("form:pay", () => {
-  modal.render({
-    content: orderSuccessful.render({ totalPrice: basket.getTotalPrice() }),
-  });
-
+// 12. Обработка успешного заказа
+events.on("success-modal:close", () => {
+  buyer.clearData();
   basket.clearBasket();
-  header.render({ counter: 0 });
-  basketView.clear();
-  basketView.totalPrice = basket.getTotalPrice();
+  modal.close();
+})
+
+// 13. Окно успешной оплаты
+events.on("form:pay", () => {
+  const oreder: IOrder = {
+  payment: buyer.getData().payment,
+  email: buyer.getData().email,
+  phone: buyer.getData().phone,
+  address: buyer.getData().address,
+  total: basket.getTotalPrice(),
+  items: basket.getBasketProducts().map(item => item.id)
+};
+  connection.postOrderData(oreder).then((result) => modal.open(orderSuccessful.render({totalPrice: result.total})));
 });

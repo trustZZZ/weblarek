@@ -3,7 +3,7 @@ import { Component } from "../../base/Component";
 import { IEvents } from "../../base/Events";
 
 interface IBasket {
-  newCard: HTMLElement;
+  items: HTMLElement[];
   totalPrice: number;
   makeOrder: boolean;
 }
@@ -26,6 +26,7 @@ export class BasketView extends Component<IBasket> {
       ".basket__button",
       this.container,
     );
+    this.makeOrderButton.disabled = true;
     this.makeOrderButton.addEventListener("click", () => {
       events.emit("basket:order", this.basketList);
     });
@@ -36,27 +37,18 @@ export class BasketView extends Component<IBasket> {
     );
   }
 
-  set newCard(card: HTMLElement) {
-    if (!this.basketList.contains(card)) {
-      this.basketList.appendChild(card);
-    } else {
-      this.basketList.replaceChild(card, card);
-    }
+  set items(items: HTMLLIElement[]) {
+    this.basketList.replaceChildren();
+    items.forEach((item) => {
+      this.basketList.appendChild(item);
+    });
   }
 
   set totalPrice(value: number) {
     this.basketPriceElement.textContent = String(`${value} синапсов`);
   }
 
-  deleteItem(card: HTMLElement): void {
-    this.basketList.removeChild(card);
-  }
-
-  clear(): void {
-    this.basketList.replaceChildren();
-  }
-
-  set makeOrder(value: boolean) {
+  set orederButtonActive(value: boolean) {
     this.makeOrderButton.disabled = !value;
   }
 }

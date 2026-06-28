@@ -29,11 +29,11 @@ export class Modal extends Component<IModal> {
     );
   }
 
-  close() {
+  close(): void {
     this.container.classList.remove("modal_active");
   }
 
-  open(value: HTMLElement) {
+  open(value: HTMLElement): void {
     if (this.modalContent.firstElementChild) {
       this.modalContent.firstElementChild.remove();
     }

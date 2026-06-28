@@ -56,17 +56,6 @@ export class OrderForm extends Form<IFormSelectionButton> {
   set payment(payment: TPayment | null) {
     this.cardButton.classList.toggle("button_alt-active", payment == "card");
     this.cashButton.classList.toggle("button_alt-active", payment == "cash");
-
-    // this.cashButton.classList.toggle(
-    //   "button_alt-active",
-    //   this.cashButton.classList.contains("button_alt-active") &&
-    //     payment == null,
-    // );
-    // this.cardButton.classList.toggle(
-    //   "button_alt-active",
-    //   this.cardButton.classList.contains("button_alt-active") &&
-    //     payment == null,
-    // );
   }
 
   set addressText(value: string) {

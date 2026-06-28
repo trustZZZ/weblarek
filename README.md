@@ -216,3 +216,269 @@ Presenter - презентер содержит основную логику п
 
 `async postOrderData(data: IOrder): Promise<IOrder>` - отправка данных на сервер.
 `async getProductsFromServer(): Promise<IResponse>` - получение с сервера объекта с массивом товаров.
+
+## Представление
+
+Для отображения данных и их измениния используются несколько сущностей: корзина, карточка товара, форма, каталог, корзина в заголовке, модальное окно
+
+### Класс BasketView
+
+Отображение карточек товара в корзине
+
+Конструктор:
+`constructor(protected events: IEvents, protected container: HTMLElement)` - создает темплейт корзины с товарами.
+
+Поля класса:
+
+`protected basketList: HTMLUListElement` - элемент ДОМ со списком товаров
+`protected makeOrderButton: HTMLButtonElement` - кнопка оформления заказа
+`protected basketPriceElement: HTMLElement` - элемент отображения суммы заказа в корзине
+
+Сеттеры класса:
+
+`set items(items: HTMLLIElement[])` - отображение данных в корзине.
+`set totalPrice(value: number)` - установление суммы заказа в корзине.
+`set orederButtonActive(value: boolean)` - включение и отключение кнопки оформления заказа.
+
+### Класс Card
+
+Базовый класс для карточек с товаром
+
+Конструктор:
+`constructor(protected container: HTMLElement)` - создает темплейт карточки с товаром.
+
+Поля класса:
+
+`protected titleElement: HTMLElement` - элемент ДОМ с заголовком товара
+`protected priceElement: HTMLElement` - элемент ДОМ с ценой товара
+
+Сеттеры класса:
+
+`set price(value: number)` - установка цены товара.
+`set title(value: string)` - установка заголовка карточки товара.
+
+### Класс BasketCard
+
+Класс для карточек с товаром в корзине
+
+Конструктор:
+`constructor(protected container: HTMLElement, protected actions?: ICardActions)` - создает темплейт карточки с товаром.
+
+Поля класса:
+
+`protected seqNumberElement: HTMLElement` - элемент с номером товара в корзине.
+`protected actionButton: HTMLButtonElement` - кнопка удаления товара из корзины.
+
+Сеттеры класса:
+
+`set seqNumber(value: number)` - установка номера товара в корзине.
+
+### Класс CatalogCard
+
+Класс для карточек с товаром в каталоге
+
+Конструктор:
+`constructor(protected container: HTMLElement, protected actions?: ICardActions)` - создает темплейт карточки с товаром.
+
+Поля класса:
+
+`protected categoryElement: HTMLElement` - элемент с категорией товара в каталоге.
+`protected imageElement: HTMLImageElement` - изображение товара.
+
+Сеттеры класса:
+
+`set category(value: string)` - установка категории товара в каталоге.
+`set image(value: string)` - установка изображения товара в каталоге.
+
+### Класс PreviewCard
+
+Класс для карточки с детальным описанием.
+
+Конструктор:
+`constructor(protected container: HTMLElement, protected actions?: ICardActions)` - создает темплейт карточки с товаром.
+
+Поля класса:
+
+`protected descriptionElement: HTMLElement` - элемент описания товара.
+`protected actionButton: HTMLButtonElement` - кнопка покупки (удаления из корзины) товара.
+`protected categoryElement: HTMLElement` - элемент категории товара.
+`protected imageElement: HTMLImageElement` - изображение товара.
+
+Сеттеры класса:
+
+`set description(value: string)` - установка описания товара.
+`set image(value: string)` - установка изображения товара в каталоге.
+`set category(value: string)` - установка категории товара.
+`set buttonText(text: string)` - установка надписи на кнопке в зависимости от наличия товара в корзине.
+`set buttonActive(active: boolean)` - установкеа состояния кнопки.
+
+### Класс Form<T> extends Component<T>
+
+Класс для карточки с детальным описанием.
+
+Конструктор:
+`constructor(protected container: HTMLElement, protected events: IEvents)` - создает темплейт формы.
+
+Поля класса:
+
+`protected modalActionButtonElement: HTMLElement` - элемент расположения кнопки действия.
+`protected buttonActionElement: HTMLButtonElement` - кнопка действия.
+`protected errorElement: HTMLElement` - элемент описания ошибки валидации.
+
+Сеттеры класса:
+
+`set error(text: string)` - установка ошибки при валидации формы.
+`set active(value: boolean)` - установкеа состояния кнопки.
+
+интерфейс:
+
+`IFormSelectionButton` - интерфейс взаимодействия с формой, устанавливает состояние кнопки действия и выбирает способ оплаты.
+
+поля интерфейса:
+`select: TPayment` - выбор способа оплаты.
+`active: boolean` - определение состояния кнопки действия.
+
+### class OrderForm extends Form<IFormSelectionButton>
+
+Класс формы заполнения данных для заказа.
+
+Конструктор:
+`constructor(protected container: HTMLElement, protected events: IEvents)` - создает темплейт формы.
+
+Поля класса:
+
+`protected cardButton: HTMLButtonElement` - кнопка выбора оплаты картой.
+`protected cashButton: HTMLButtonElement` - кнопка выбора оплаты наличными.
+`protected addressElement: HTMLInputElement` - инпут заполнения адреса.
+
+Сеттеры класса:
+
+`set payment(payment: TPayment | null)` - установка оплаты пользователя.
+`set addressText(value: string)` - установкеа тейкста в инпут формы адреса.
+
+### class ContactsForm extends Form<IFormSelectionButton>
+
+Класс формы заполнения данных покупателя.
+
+Конструктор:
+`constructor(protected container: HTMLElement, protected events: IEvents)` - создает темплейт формы.
+
+Поля класса:
+
+`protected emailElement: HTMLInputElement` - инпут заполнения почты.
+`protected phoneElement: HTMLInputElement` - инпут заполнения телефона.
+
+Сеттеры класса:
+
+`set emailText(value: string)` - установка почты пользователя.
+`set phoneText(value: string)` - установкеа телефона пользователя.
+
+интерфейс:
+`IGallery` - интерфейс взаимодействия с каталогом товаров.
+
+поля интерфейса:
+
+`catalog: HTMLElement[]` - все элементы (товары) каталога.
+
+### class Gallery extends Component<IGallery>
+
+Класс каталога товаров.
+
+Конструктор:
+`constructor(protected container: HTMLElement)` - создает темплейт формы.
+
+Поля класса:
+
+`protected catalogElement: HTMLElement` - элемент каталога.
+
+Сеттеры класса:
+
+`set catalog(items: HTMLElement[])` - заполенение каталога товарами.
+
+интерфейс:
+`IHeader` - интерфейс взаимодействия с корзиной в заголовке.
+
+поля интерфейса:
+
+`counter: number` - количество товаров в корзине.
+
+### class Header extends Component<IHeader>
+
+Класс каталога товаров.
+
+Конструктор:
+`constructor(protected events: IEvents, protected container: HTMLElement)` - создает элемент управления открытием/закрытием корзины в заголовеке страницы.
+
+Поля класса:
+
+`protected basketButton: HTMLButtonElement` - кнопка открытия корзины с товарами.
+`protected counterElement: HTMLElement` - элемент количества товаров в корзине.
+
+Сеттеры класса:
+
+`set counter(value: number)` - установка количества товаров в корзине.
+
+интерфейс:
+`IModal` - интерфейс взаимодействия с модальным окном.
+
+поля интерфейса:
+
+`content: HTMLElement` - контент, отображаемый в модальном окне.
+
+### class Modal extends Component<IModal>
+
+Класс модального окна.
+
+Конструктор:
+`constructor(protected events: IEvents, protected container: HTMLElement)` - создает элемент управления открытием/закрытием модальным окном.
+
+Поля класса:
+
+`protected closeButton: HTMLButtonElement` - кнопка закрытия модального окна.
+`protected modalContent: HTMLElement` - элемент контента, отображаемого в модальном окне.
+
+Методы класса:
+
+`close(): void` - закрывает модальное окно.
+`open(value: HTMLElement)` - отображает контент в модальном окне.
+
+интерфейс:
+`IOrder` - интерфейс взаимодействия с окном успешного оформления заказа.
+
+поля интерфейса:
+
+`totalPrice: number` - сумма заказа.
+
+### class OrderSuccessful extends Component<IOrder>
+
+Класс модального окна с успешной оплатой.
+
+Конструктор:
+`constructor(protected events: IEvents, protected container: HTMLElement)` - создает элемент управления открытием/закрытием модальным окном.
+
+Поля класса:
+
+`protected closeButton: HTMLButtonElement` - кнопка закрытия модального окна.
+`protected modalContent: HTMLElement` - элемент контента, отображаемого в модальном окне.
+
+Сеттеры класса:
+
+`set totalPrice(value: number)` - установка суммы заказа.
+
+
+## События:
+`gallery:changed` - изменение содержимого страницы.
+`card:selected` - пользователь выбрал карточку с товаром из каталога.
+`catalog:cardDetailedChanged` - выбранная карточка попала в модель данных для детального отображения.
+`card:addToBasket` - пользователь нажал кнопку "в корзину", для добавления в корзину выбранного товара.
+`basket:changed` - каждый раз, когда меняется корзина, перерисовывается представление.
+`basket:open` - пользователь нажал на иконку корзины и она открылась.
+`basket:order` - пользователь нажал кнопку оформления заказа.
+`form:paymentSelected` - пользователь выбрал способ оплаты.
+`form:address` - пользователь ввел дынные в поле адресса заказа.
+`contacts-form:email` - пользователь ввел данные в поле почты.
+`contacts-form:phone` - пользователь ввел данные в поле телефона.
+`user:dataChanged` - изменение данных пользователя.
+`form:next` - пользователь нажал на кнопку для продолжения заказа в форме.
+`success-modal:close` - событие на ответ успешный ответ сервера, все данные удаляются.
+`form:pay` - пользователь нажал на кнопку оплатить заказ.
